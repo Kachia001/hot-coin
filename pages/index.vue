@@ -29,7 +29,7 @@ const loadData = async () => {
     currentTime.value = klineList['BTCUSDT'][9][0]
     let data = []
     for (const symbol in klineList) {
-      data = [...data, { symbol: symbol.replace('USDT', ''), beforeAmount: parseFloat(klineList[symbol][klineList[symbol].length - 1][8]), currentAmount: parseFloat(klineList[symbol][klineList[symbol].length - 2][8]) }]
+      data = [...data, { symbol: symbol.replace('USDT', ''), beforeAmount: parseFloat(klineList[symbol][klineList[symbol].length - 2][8]), currentAmount: parseFloat(klineList[symbol][klineList[symbol].length - 1][8]) }]
     }
     cryptoData.value = data
 

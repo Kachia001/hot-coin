@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "start":"dotenv -- node .output/server/index.mjs"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.2.0",
@@ -16,6 +17,7 @@
     "@nuxt/image": "^1.10.0",
     "@nuxt/ui": "^3.0.1",
     "@tailwindcss/forms": "^0.5.10",
+    "dotenv-cli": "^8.0.0",
     "eslint": "^9.23.0",
     "nuxt": "^3.16.1",
     "typescript": "^5.8.2",
