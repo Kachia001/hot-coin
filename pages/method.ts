@@ -14,15 +14,6 @@ export const useBatchKlinesApi = () => {
     try {
       // 모든 API 호출을 병렬로 실행
       const promises = symbols.map((symbol) => {
-        console.log(useFetch<BinanceFuturesKlinesResponse>(
-          'https://fapi.binance.com/fapi/v1/klines',
-          {
-            params: {
-              symbol,
-              ...commonParams,
-            },
-          },
-        ))
         return useFetch<BinanceFuturesKlinesResponse>(
           'https://fapi.binance.com/fapi/v1/klines',
           {

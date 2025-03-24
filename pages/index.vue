@@ -6,26 +6,17 @@ import { UButton } from '#components'
 const symbolList: BinanceFuturesExchangeInfo = await $fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
 
 const symbolNameList = symbolList.symbols.filter(symbol => symbol.status === 'TRADING' && symbol.contractType === 'PERPETUAL' && symbol.marginAsset === 'USDT').map(symbol => symbol.symbol)
-console.log(symbolNameList)
 
 const { fetchMajorCryptos, fetchBtcAllTimeframes } = useCryptoData()
 
 // 컴포지션 API를 사용하는 setup 함수 내부
-const cryptoData = ref({})
+const cryptoData = ref([])
 const timeFrameData = ref({})
 const currentTime = ref()
 const sorting = ref([
   {
-    id: 'symbol',
-    desc: false,
-  },
-  {
-    id: 'beforeAmount',
-    desc: false,
-  },
-  {
     id: 'currentAmount',
-    desc: false,
+    desc: true,
   },
 ])
 
@@ -34,15 +25,14 @@ const loadData = async () => {
     // 여러 암호화폐 데이터 로드
 
     const klineList = await fetchMajorCryptos(symbolNameList)
-    console.log(klineList, klineList['BTCUSDT'][9][0])
+
     currentTime.value = klineList['BTCUSDT'][9][0]
     let data = []
     for (const symbol in klineList) {
-      data = [...data, { symbol: symbol.replace('USDT', ''), beforeAmount: klineList[symbol][9][8], currentAmount: klineList[symbol][8][8] }]
-      console.log(klineList[symbol])
+      data = [...data, { symbol: symbol.replace('USDT', ''), beforeAmount: parseFloat(klineList[symbol][klineList[symbol].length - 1][8]), currentAmount: parseFloat(klineList[symbol][klineList[symbol].length - 2][8]) }]
     }
     cryptoData.value = data
-    console.log(cryptoData.value)
+
     // BTC의 여러 타임프레임 데이터 로드
     // timeFrameData.value = await fetchBtcAllTimeframes()
   }
@@ -61,7 +51,7 @@ const columns = [
       return h(UButton, {
         color: 'neutral',
         variant: 'ghost',
-        label: 'symbol',
+        label: 'Symbol',
         icon: isSorted
           ? isSorted === 'asc'
             ? 'i-lucide-arrow-up-narrow-wide'
@@ -80,7 +70,7 @@ const columns = [
       return h(UButton, {
         color: 'neutral',
         variant: 'ghost',
-        label: 'beforeAmount',
+        label: 'Before Trade Count',
         icon: isSorted
           ? isSorted === 'asc'
             ? 'i-lucide-arrow-up-narrow-wide'
@@ -99,7 +89,7 @@ const columns = [
       return h(UButton, {
         color: 'neutral',
         variant: 'ghost',
-        label: 'currentAmount',
+        label: 'Current Trade Count',
         icon: isSorted
           ? isSorted === 'asc'
             ? 'i-lucide-arrow-up-narrow-wide'
@@ -112,6 +102,10 @@ const columns = [
   },
 
 ]
+
+const goBinance = (row) => {
+  window.open(`https://www.binance.com/en/futures/${row.original.symbol}USDT`, '_blank')
+}
 </script>
 
 <template>
@@ -119,8 +113,10 @@ const columns = [
   <div>불러온 시간 : {{ new Date(currentTime).toLocaleString() }}</div>
   <UTable
     v-model:sorting="sorting"
-    :data="cryptoData"
+    class="w-1/2"
+    :data="cryptoData.filter((data) => (data.beforeAmount !== 0 && data.currentAmount !== 0)).sort((data) => data)"
     :columns="columns"
+    @select="goBinance"
   />
 </template>
 
