@@ -124,7 +124,7 @@ const goBinance = (row: TableRow<CryptoData | null>) => {
     class="w-1/2"
     :data="cryptoData"
     :columns="columns"
-    @selet="goBinance"
+    @select="goBinance"
   />
 </template>
 
