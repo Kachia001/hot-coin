@@ -2,16 +2,20 @@
 import type { BinanceFuturesExchangeInfo } from '~/types/type'
 import { useCryptoData } from '~/pages/method'
 import { UButton } from '#components'
+import type { TableColumn, TableRow } from '#ui/components/Table.vue'
 
 const symbolList: BinanceFuturesExchangeInfo = await $fetch('https://fapi.binance.com/fapi/v1/exchangeInfo')
 
-const symbolNameList = symbolList.symbols.filter(symbol => symbol.status === 'TRADING' && symbol.contractType === 'PERPETUAL' && symbol.marginAsset === 'USDT').map(symbol => symbol.symbol)
+const symbolNameList = symbolList.symbols
+  .filter(symbol =>
+    symbol.status === 'TRADING'
+    && symbol.contractType === 'PERPETUAL'
+    && symbol.marginAsset === 'USDT')
+  .map(symbol => symbol.symbol)
 
-const { fetchMajorCryptos, fetchBtcAllTimeframes } = useCryptoData()
+const { fetchMajorCryptos } = useCryptoData()
 
-// 컴포지션 API를 사용하는 setup 함수 내부
-const cryptoData = ref([])
-const timeFrameData = ref({})
+const cryptoData = ref<(CryptoData | null)[]>([])
 const currentTime = ref()
 const sorting = ref([
   {
@@ -20,21 +24,20 @@ const sorting = ref([
   },
 ])
 
+type CryptoData = { symbol: string, beforeAmount: number, currentAmount: number }
+
 const loadData = async () => {
   try {
-    // 여러 암호화폐 데이터 로드
-
     const klineList = await fetchMajorCryptos(symbolNameList)
-
-    currentTime.value = klineList['BTCUSDT'][9][0]
-    let data = []
-    for (const symbol in klineList) {
-      data = [...data, { symbol: symbol.replace('USDT', ''), beforeAmount: parseFloat(klineList[symbol][klineList[symbol].length - 2][8]), currentAmount: parseFloat(klineList[symbol][klineList[symbol].length - 1][8]) }]
+    currentTime.value = klineList['BTCUSDT'][9][0] // 가장 최근 데이터인 9번째 인덱스, 해당 인덱스의 시간인 0번째 인덱스, timeStamp
+    let data: CryptoData[] = []
+    for (const symbolName in klineList) {
+      const symbol = symbolName.replace('USDT', '')
+      const beforeAmount = klineList[symbolName][klineList[symbolName].length - 2][8]
+      const currentAmount = klineList[symbolName][klineList[symbolName].length - 1][8]
+      data = [...data, { symbol, beforeAmount, currentAmount }]
     }
-    cryptoData.value = data
-
-    // BTC의 여러 타임프레임 데이터 로드
-    // timeFrameData.value = await fetchBtcAllTimeframes()
+    cryptoData.value = data.filter(cryptoData => (cryptoData?.beforeAmount !== 0 && cryptoData?.currentAmount !== 0))
   }
   catch (error) {
     console.error('데이터 로딩 오류:', error)
@@ -42,7 +45,7 @@ const loadData = async () => {
 }
 await loadData()
 
-const columns = [
+const columns: TableColumn<CryptoData | null>[] = [
   {
     accessorKey: 'symbol',
     header: ({ column }) => {
@@ -57,10 +60,12 @@ const columns = [
             ? 'i-lucide-arrow-up-narrow-wide'
             : 'i-lucide-arrow-down-wide-narrow'
           : 'i-lucide-arrow-up-down',
-        class: '-mx-2.5',
+        class: '-mx-2.5 cursor-pointer',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       })
     },
+    cell: ({ row }) =>
+      h('div', { class: 'cursor-pointer' }, row.getValue('symbol')),
   },
   {
     accessorKey: 'beforeAmount',
@@ -76,10 +81,12 @@ const columns = [
             ? 'i-lucide-arrow-up-narrow-wide'
             : 'i-lucide-arrow-down-wide-narrow'
           : 'i-lucide-arrow-up-down',
-        class: '-mx-2.5',
+        class: '-mx-2.5 cursor-pointer',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       })
     },
+    cell: ({ row }) =>
+      h('div', { class: 'cursor-pointer' }, row.getValue('beforeAmount')),
   },
   {
     accessorKey: 'currentAmount',
@@ -95,16 +102,17 @@ const columns = [
             ? 'i-lucide-arrow-up-narrow-wide'
             : 'i-lucide-arrow-down-wide-narrow'
           : 'i-lucide-arrow-up-down',
-        class: '-mx-2.5',
+        class: '-mx-2.5 cursor-pointer',
         onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
       })
     },
+    cell: ({ row }) =>
+      h('div', { class: 'cursor-pointer' }, row.getValue('currentAmount')),
   },
-
 ]
 
-const goBinance = (row) => {
-  window.open(`https://www.binance.com/en/futures/${row.original.symbol}USDT`, '_blank')
+const goBinance = (row: TableRow<CryptoData | null>) => {
+  window.open(`https://www.binance.com/en/futures/${row.original?.symbol}USDT`, '_blank')
 }
 </script>
 
@@ -114,9 +122,9 @@ const goBinance = (row) => {
   <UTable
     v-model:sorting="sorting"
     class="w-1/2"
-    :data="cryptoData.filter((data) => (data.beforeAmount !== 0 && data.currentAmount !== 0)).sort((data) => data)"
+    :data="cryptoData"
     :columns="columns"
-    @select="goBinance"
+    @selet="goBinance"
   />
 </template>
 
